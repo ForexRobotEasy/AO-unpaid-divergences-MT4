@@ -1,0 +1,119 @@
+
+// AO unpaid divergences MT4
+// Developer's site: forexroboteasy.com
+// Development name: Forex Robot Easy Team
+
+#property strict
+
+// Input parameters
+input int fastMA = 5; // Fast moving average period
+input int slowMA = 34; // Slow moving average period
+input int signalMA = 5; // Signal moving average period
+input int reversalSwingPeriod = 3; // Reversal swing period
+input double divergenceThreshold = 0.0005; // Divergence threshold
+
+// Initialization function
+int OnInit()
+{
+    // Add the necessary indicators
+    if (!IndicatorsSet()) // Check if indicators are set successfully
+    {
+        Print('Failed to set indicators. Please make sure they are available in the terminal.');
+        return INIT_FAILED;
+    }
+    
+    return INIT_SUCCEEDED;
+}
+
+// Deinitialization function
+void OnDeinit(const int reason)
+{
+    // Remove the indicators
+    IndicatorsRemove();
+}
+
+// Execution function
+void OnTick()
+{
+    // Check if there are any divergences
+    if (DivergenceDetected())
+    {
+        // Identify possible reversal swings
+        if (ReversalSwingDetected())
+        {
+            // Generate alerts and notifications
+            GenerateAlerts();
+        }
+    }
+}
+
+// Check if indicators are set successfully
+bool IndicatorsSet()
+{
+    if (!iMA(Symbol(), 0, fastMA, 0, MODE_SMA, PRICE_CLOSE))
+        return false;
+    
+    if (!iMA(Symbol(), 0, slowMA, 0, MODE_SMA, PRICE_CLOSE))
+        return false;
+    
+    if (!iMA(Symbol(), 0, signalMA, 0, MODE_SMA, PRICE_CLOSE))
+        return false;
+    
+    return true;
+}
+
+// Remove the indicators
+void IndicatorsRemove()
+{
+    IndicatorRelease(iMA(Symbol(), 0, fastMA, 0, MODE_SMA, PRICE_CLOSE));
+    IndicatorRelease(iMA(Symbol(), 0, slowMA, 0, MODE_SMA, PRICE_CLOSE));
+    IndicatorRelease(iMA(Symbol(), 0, signalMA, 0, MODE_SMA, PRICE_CLOSE));
+}
+
+// Check if there are any divergences
+bool DivergenceDetected()
+{
+    // Calculate the AO (Awesome Oscillator)
+    double fastMAVal = iMA(Symbol(), 0, fastMA, 0, MODE_SMA, PRICE_CLOSE, 1);
+    double slowMAVal = iMA(Symbol(), 0, slowMA, 0, MODE_SMA, PRICE_CLOSE, 1);
+    double ao = fastMAVal - slowMAVal;
+    
+    // Calculate the signal line
+    double signalLine = iMAOnArray(ArrayCopy(ao), 0, signalMA, 0, MODE_SMA, 1);
+    
+    // Check for regular divergence
+    if (ao > signalLine && ao > 0 && signalLine < 0 && ao - signalLine > divergenceThreshold)
+        return true;
+    
+    // Check for hidden divergence
+    if (ao < signalLine && ao < 0 && signalLine > 0 && signalLine - ao > divergenceThreshold)
+        return true;
+    
+    return false;
+}
+
+// Identify possible reversal swings
+bool ReversalSwingDetected()
+{
+    double highVal = High[1]; // Previous high value
+    double lowVal = Low[1]; // Previous low value
+    double currentHigh = High[0]; // Current high value
+    double currentLow = Low[0]; // Current low value
+    
+    // Calculate the reversal swing
+    double previousSwing = highVal - lowVal;
+    double currentSwing = currentHigh - currentLow;
+    
+    // Check if the current swing is greater than the previous swing
+    if (currentSwing > previousSwing)
+        return true;
+    
+    return false;
+}
+
+// Generate alerts and notifications
+void GenerateAlerts()
+{
+    Alert('Potential trading opportunity detected.');
+    Print('Potential trading opportunity detected.');
+}
